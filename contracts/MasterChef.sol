@@ -103,7 +103,7 @@ contract MasterChef is Ownable {
     // 池子信息数组
     // Info of each pool.
     PoolInfo[] public poolInfo;
-    // 用户地址对应用户信息的映射
+    // 池子ID=>用户地址=>用户信息 的映射
     // Info of each user that stakes LP tokens.
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
     // 总分配点。必须是所有池中所有分配点的总和
@@ -260,9 +260,13 @@ contract MasterChef is Ownable {
      */
     // View function to see pending SUSHIs on frontend.
     function pendingSushi(uint256 _pid, address _user) external view returns (uint256) {
+        // 实例化池子信息
         PoolInfo storage pool = poolInfo[_pid];
+        // 根据池子id和用户地址,实例化用户信息
         UserInfo storage user = userInfo[_pid][_user];
+        // 每股累积SUSHI乘以1e12
         uint256 accSushiPerShare = pool.accSushiPerShare;
+        // 
         uint256 lpSupply = pool.lpToken.balanceOf(address(this));
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
             uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
