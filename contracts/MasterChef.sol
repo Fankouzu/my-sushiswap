@@ -8,7 +8,9 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./SushiToken.sol";
 
+//主厨合约地址 0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd
 
+// 迁移合约接口
 interface IMigratorChef {
     // 执行从旧版UniswapV2到SushiSwap的LP令牌迁移
     // Perform LP token migration from legacy UniswapV2 to SushiSwap.
@@ -53,7 +55,7 @@ contract MasterChef is Ownable {
     // Info of each user.
     struct UserInfo {
         uint256 amount;     // How many LP tokens the user has provided.用户提供了多少个LP令牌。
-        uint256 rewardDebt; // Reward debt. See explanation below.奖励债务。请参阅下面的说明。
+        uint256 rewardDebt; // Reward debt. See explanation below.债务奖励。请参阅下面的说明。
         //
         // 我们在这里做一些有趣的数学运算。基本上，在任何时间点，授予用户但待分配的SUSHI数量为：
         // We do some fancy math here. Basically, any point in time, the amount of SUSHIs
@@ -125,6 +127,7 @@ contract MasterChef is Ownable {
     * @param _startBlock SUSHI挖掘开始时的块号
     * @param _bonusEndBlock 奖励结束块号
      */
+     // 以下是sushiswap主厨合约布署时的参数
     // _sushi: '0x6B3595068778DD592e39A122f4f5a5cF09C90fE2',
     // _devaddr: '0xF942Dba4159CB61F8AD88ca4A83f5204e8F4A6bd',
     // _sushiPerBlock: '100000000000000000000',
@@ -255,8 +258,8 @@ contract MasterChef is Ownable {
 
     /**
     * @dev 查看功能以查看前端的处理中的SUSHI
-    * @param _pid 
-    * @param _user 
+    * @param _pid 池子id
+    * @param _user 用户地址
      */
     // View function to see pending SUSHIs on frontend.
     function pendingSushi(uint256 _pid, address _user) external view returns (uint256) {
@@ -264,97 +267,180 @@ contract MasterChef is Ownable {
         PoolInfo storage pool = poolInfo[_pid];
         // 根据池子id和用户地址,实例化用户信息
         UserInfo storage user = userInfo[_pid][_user];
-        // 每股累积SUSHI乘以1e12
+        // 每股累积SUSHI
         uint256 accSushiPerShare = pool.accSushiPerShare;
-        // 
+        // LPtoken的供应量 = 当前合约在`池子信息.lotoken地址`的余额
         uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        // 如果当前区块号 > 池子信息.分配发生的最后一个块号 && LPtoken的供应量 != 0
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
+            // 奖金乘积 = 获取奖金乘积(分配发生的最后一个块号, 当前块号)
             uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+            // sushi奖励 = 奖金乘积 * 每块创建的SUSHI令牌 * 池子分配点数 / 总分配点数
             uint256 sushiReward = multiplier.mul(sushiPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
+            // 每股累积SUSHI = 每股累积SUSHI + sushi奖励 * 1e12 / LPtoken的供应量
             accSushiPerShare = accSushiPerShare.add(sushiReward.mul(1e12).div(lpSupply));
         }
+        // 返回 用户.已添加的数额 + 每股累积SUSHI / 1e12 - 用户.债务奖励
         return user.amount.mul(accSushiPerShare).div(1e12).sub(user.rewardDebt);
     }
 
+    /**
+    * @dev 更新所有池的奖励变量。注意汽油消耗
+     */
     // Update reward vairables for all pools. Be careful of gas spending!
     function massUpdatePools() public {
+        // 池子数量
         uint256 length = poolInfo.length;
+        // 遍历所有池子
         for (uint256 pid = 0; pid < length; ++pid) {
+            // 升级池子(池子id)
             updatePool(pid);
         }
     }
 
+    /**
+    * @dev 将给定池的奖励变量更新为最新
+    * @param _pid 池子id
+     */
     // Update reward variables of the given pool to be up-to-date.
     function updatePool(uint256 _pid) public {
+        // 实例化池子信息
         PoolInfo storage pool = poolInfo[_pid];
+        // 如果当前区块号 <= 池子信息.分配发生的最后一个块号
         if (block.number <= pool.lastRewardBlock) {
+            // 直接返回
             return;
         }
+        // LPtoken的供应量 = 当前合约在`池子信息.lotoken地址`的余额
         uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        // 如果 LPtoken的供应量 == 0
         if (lpSupply == 0) {
+            // 池子信息.分配发生的最后一个块号 = 当前块号
             pool.lastRewardBlock = block.number;
+            // 返回
             return;
         }
+        // 奖金乘积 = 获取奖金乘积(分配发生的最后一个块号, 当前块号)
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+        // sushi奖励 = 奖金乘积 * 每块创建的SUSHI令牌 * 池子分配点数 / 总分配点数
         uint256 sushiReward = multiplier.mul(sushiPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
+        // 调用sushi的铸造方法, 为管理团队铸造 (`sushi奖励` / 10) token
         sushi.mint(devaddr, sushiReward.div(10));
+        // 调用sushi的铸造方法, 为当前合约铸造 `sushi奖励` token
         sushi.mint(address(this), sushiReward);
+        // 每股累积SUSHI = 每股累积SUSHI + sushi奖励 * 1e12 / LPtoken的供应量
         pool.accSushiPerShare = pool.accSushiPerShare.add(sushiReward.mul(1e12).div(lpSupply));
+        // 池子信息.分配发生的最后一个块号 = 当前块号
         pool.lastRewardBlock = block.number;
     }
 
+    /**
+    * @dev 将LP令牌存入MasterChef进行SUSHI分配
+    * @param _pid 池子id
+    * @param _amount 数额
+     */
     // Deposit LP tokens to MasterChef for SUSHI allocation.
     function deposit(uint256 _pid, uint256 _amount) public {
+        // 实例化池子信息
         PoolInfo storage pool = poolInfo[_pid];
+        // 根据池子id和当前用户地址,实例化用户信息
         UserInfo storage user = userInfo[_pid][msg.sender];
+        // 将给定池的奖励变量更新为最新
         updatePool(_pid);
+        // 如果用户已添加的数额>0
         if (user.amount > 0) {
+            // 待定数额 = 用户.已添加的数额 * 池子.每股累积SUSHI / 1e12 - 用户.债务奖励
             uint256 pending = user.amount.mul(pool.accSushiPerShare).div(1e12).sub(user.rewardDebt);
+            // 向当前用户安全发送待定数额的sushi
             safeSushiTransfer(msg.sender, pending);
         }
+        // 调用池子.lptoken的安全发送方法,将_amount数额的lp token从当前用户发送到当前合约
         pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
+        // 用户.已添加的数额  = 用户.已添加的数额 + _amount数额
         user.amount = user.amount.add(_amount);
+        // 用户.债务奖励 = 用户.已添加的数额 * 池子.每股累积SUSHI / 1e12
         user.rewardDebt = user.amount.mul(pool.accSushiPerShare).div(1e12);
+        // 触发存款事件
         emit Deposit(msg.sender, _pid, _amount);
     }
 
+    /**
+    * @dev 从MasterChef提取LP令牌
+    * @param _pid 池子id
+    * @param _amount 数额
+     */
     // Withdraw LP tokens from MasterChef.
     function withdraw(uint256 _pid, uint256 _amount) public {
+        // 实例化池子信息
         PoolInfo storage pool = poolInfo[_pid];
+        // 根据池子id和当前用户地址,实例化用户信息
         UserInfo storage user = userInfo[_pid][msg.sender];
+        // 确认用户.已添加数额 >= _amount数额
         require(user.amount >= _amount, "withdraw: not good");
+        // 将给定池的奖励变量更新为最新
         updatePool(_pid);
+        // 待定数额 = 用户.已添加的数额 * 池子.每股累积SUSHI / 1e12 - 用户.债务奖励
         uint256 pending = user.amount.mul(pool.accSushiPerShare).div(1e12).sub(user.rewardDebt);
+        // 向当前用户安全发送待定数额的sushi
         safeSushiTransfer(msg.sender, pending);
+        // 用户.已添加的数额  = 用户.已添加的数额 - _amount数额
         user.amount = user.amount.sub(_amount);
+        // 用户.债务奖励 = 用户.已添加的数额 * 池子.每股累积SUSHI / 1e12
         user.rewardDebt = user.amount.mul(pool.accSushiPerShare).div(1e12);
+        // 调用池子.lptoken的安全发送方法,将_amount数额的lp token从当前合约发送到当前用户
         pool.lpToken.safeTransfer(address(msg.sender), _amount);
+        // 触发提款事件
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
+    /**
+    * @dev 提款而不关心奖励。仅紧急情况
+    * @param _pid 池子id
+     */
     // Withdraw without caring about rewards. EMERGENCY ONLY.
     function emergencyWithdraw(uint256 _pid) public {
+        // 实例化池子信息
         PoolInfo storage pool = poolInfo[_pid];
+        // 根据池子id和当前用户地址,实例化用户信息
         UserInfo storage user = userInfo[_pid][msg.sender];
+        // 调用池子.lptoken的安全发送方法,将_amount数额的lp token从当前合约发送到当前用户
         pool.lpToken.safeTransfer(address(msg.sender), user.amount);
+        // 触发紧急提款事件
         emit EmergencyWithdraw(msg.sender, _pid, user.amount);
+        // 用户.已添加数额 = 0
         user.amount = 0;
+        // 用户.债务奖励 = 0
         user.rewardDebt = 0;
     }
 
+    /**
+    * @dev 安全的寿司转移功能，以防万一舍入错误导致池中没有足够的寿司
+    * @param _to to地址
+    * @param _amount 数额
+     */
     // Safe sushi transfer function, just in case if rounding error causes pool to not have enough SUSHIs.
     function safeSushiTransfer(address _to, uint256 _amount) internal {
+        // sushi余额 = 当前合约在sushi的余额
         uint256 sushiBal = sushi.balanceOf(address(this));
+        // 如果数额 > sushi余额
         if (_amount > sushiBal) {
+            // 按照sushi余额发送sushi到to地址
             sushi.transfer(_to, sushiBal);
         } else {
+            // 按照_amount数额发送sushi到to地址
             sushi.transfer(_to, _amount);
         }
     }
 
+    /**
+    * @dev 通过先前的开发者地址更新开发者地址
+    * @param _devaddr 开发者地址
+     */
     // Update dev address by the previous dev.
     function dev(address _devaddr) public {
+        // 确认当前账户是开发者地址
         require(msg.sender == devaddr, "dev: wut?");
+        // 赋值新地址
         devaddr = _devaddr;
     }
 }
