@@ -1,12 +1,21 @@
+// 从COMPOUND拷贝的治理协议
 // COPIED FROM https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/GovernorAlpha.sol
+// 版权所有2020 Compound Labs，Inc.
 // Copyright 2020 Compound Labs, Inc.
+// 如果满足以下条件，则允许以源代码和二进制形式进行重新分发和使用，无论是否经过修改，都可以：
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+// 1.源代码的重新分发必须保留上述版权声明，此条件列表和以下免责声明。
 // 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+// 2.以二进制形式重新分发必须在分发随附的文档和/或其他材料中复制上述版权声明，此条件列表以及以下免责声明。
 // 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+// 3.未经事先特别书面许可，不得使用版权所有者的名称或其贡献者的名字来认可或促销从该软件衍生的产品。
 // 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+// 版权持有者和贡献者按“原样”提供此软件，不提供任何明示或暗示的担保，包括但不限于针对特定目的的适销性和适用性的暗示担保。在任何情况下，版权持有人或贡献者均不对任何直接，间接，偶发，特殊，专有或后果性的损害（包括但不限于，替代商品或服务的购买，使用，数据，或业务中断），无论基于合同，严格责任或侵权行为（包括疏忽或其他方式），无论是否出于任何责任，都应通过使用本软件的任何方式（即使已事先告知）进行了赔偿。
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
+// Ctrl + f键可查看XXX的所有修改。
 // Ctrl+f for XXX to see all the modifications.
+// 为了简化和安全起见，将uint96s更改为uint256s。
 // uint96s are changed to uint256s for simplicity and safety.
 
 // XXX: pragma solidity ^0.5.16;
@@ -16,27 +25,52 @@ pragma experimental ABIEncoderV2;
 import "./SushiToken.sol";
 
 contract GovernorAlpha {
+    /// @notice 合约名称
     /// @notice The name of this contract
+    // XXX：名称 = "Compound Governor Alpha"；
     // XXX: string public constant name = "Compound Governor Alpha";
     string public constant name = "Sushi Governor Alpha";
 
+    /**
+     * @notice 达到法定人数和投票成功所需要的支持提案的票数
+     * @dev sushi.总供应 / 25
+     */
     /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
     // XXX: function quorumVotes() public pure returns (uint) { return 400000e18; } // 400,000 = 4% of Comp
     function quorumVotes() public view returns (uint) { return sushi.totalSupply() / 25; } // 4% of Supply
 
+    /**
+     * @notice 为使投票者成为提议者所需的投票数 
+     * @dev sushi.总供应 / 100
+     */
     /// @notice The number of votes required in order for a voter to become a proposer
     // function proposalThreshold() public pure returns (uint) { return 100000e18; } // 100,000 = 1% of Comp
     function proposalThreshold() public view returns (uint) { return sushi.totalSupply() / 100; } // 1% of Supply
 
+    /**
+     * @notice 提案中可以包含的最大操作数 
+     * @dev 返回10
+     */
     /// @notice The maximum number of actions that can be included in a proposal
     function proposalMaxOperations() public pure returns (uint) { return 10; } // 10 actions
 
+    /**
+     * @notice 一旦提议，投票表决可能会延迟
+     * @dev 返回1
+     */
     /// @notice The delay before voting on a proposal may take place, once proposed
     function votingDelay() public pure returns (uint) { return 1; } // 1 block
 
+    /**
+     * @notice 对提案进行投票的持续时间（以块为单位）
+     * @dev 返回 17280 约3天（假设15秒） 
+     */
     /// @notice The duration of voting on a proposal, in blocks
     function votingPeriod() public pure returns (uint) { return 17280; } // ~3 days in blocks (assuming 15s blocks)
 
+    /**
+     * @notice 时间锁合约地址
+     */
     /// @notice The address of the Compound Protocol Timelock
     TimelockInterface public timelock;
 
