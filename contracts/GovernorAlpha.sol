@@ -68,123 +68,165 @@ contract GovernorAlpha {
     /// @notice The duration of voting on a proposal, in blocks
     function votingPeriod() public pure returns (uint) { return 17280; } // ~3 days in blocks (assuming 15s blocks)
 
-    /**
-     * @notice 时间锁合约地址
-     */
+    /// @notice 时间锁合约地址
     /// @notice The address of the Compound Protocol Timelock
     TimelockInterface public timelock;
 
+    /// @notice SushiToken 合约地址
     /// @notice The address of the Compound governance token
     // XXX: CompInterface public comp;
     SushiToken public sushi;
 
+    /// @notice 监护人地址
     /// @notice The address of the Governor Guardian
     address public guardian;
 
+    /// @notice 总提案数量
     /// @notice The total number of proposals
     uint public proposalCount;
 
+    // 提案构造体
     struct Proposal {
+        /// @notice 提案的唯一id
         /// @notice Unique id for looking up a proposal
         uint id;
 
+        /// @notice 提案创建者
         /// @notice Creator of the proposal
         address proposer;
 
+        /// @notice 提案可在表决成功后设置的时间戳
         /// @notice The timestamp that the proposal will be available for execution, set once the vote succeeds
         uint eta;
 
+        /// @notice 要进行调用的目标地址的有序列表
         /// @notice the ordered list of target addresses for calls to be made
         address[] targets;
 
+        /// @notice 要传递给要进行的调用的值（即msg.value）的有序列表
         /// @notice The ordered list of values (i.e. msg.value) to be passed to the calls to be made
         uint[] values;
 
+        /// @notice 要调用的功能签名的有序列表
         /// @notice The ordered list of function signatures to be called
         string[] signatures;
 
+        /// @notice 要传递给每个调用方法的调用数据的有序列表
         /// @notice The ordered list of calldata to be passed to each call
         bytes[] calldatas;
 
+        /// @notice 开始投票的区块：持有人必须在此区块之前委派投票
         /// @notice The block at which voting begins: holders must delegate their votes prior to this block
         uint startBlock;
 
+        /// @notice 投票结束的区块：必须在该区块之前进行投票
         /// @notice The block at which voting ends: votes must be cast prior to this block
         uint endBlock;
 
+        /// @notice 目前赞成该提案的票数
         /// @notice Current number of votes in favor of this proposal
         uint forVotes;
 
+        /// @notice 目前反对该提案的票数
         /// @notice Current number of votes in opposition to this proposal
         uint againstVotes;
 
+        /// @notice 标记该提案是否已被取消的标志
         /// @notice Flag marking whether the proposal has been canceled
         bool canceled;
 
+        /// @notice 标记该提案是否已执行的标志
         /// @notice Flag marking whether the proposal has been executed
         bool executed;
 
+        /// @notice 整个选民的选票收据
         /// @notice Receipts of ballots for the entire set of voters
         mapping (address => Receipt) receipts;
     }
 
+    /// @notice 投票者选票收据构造体
     /// @notice Ballot receipt record for a voter
     struct Receipt {
+        /// @notice 是否已投票
         /// @notice Whether or not a vote has been cast
         bool hasVoted;
 
+        /// @notice 选民是否支持提案
         /// @notice Whether or not the voter supports the proposal
         bool support;
 
+        /// @notice 选民所投票的票数
         /// @notice The number of votes the voter had, which were cast
         uint256 votes;
     }
 
+    /// @notice 提案可能处于的可能状态枚举
     /// @notice Possible states that a proposal may be in
     enum ProposalState {
-        Pending,
-        Active,
-        Canceled,
-        Defeated,
-        Succeeded,
-        Queued,
-        Expired,
-        Executed
+        Pending,    // 处理中
+        Active,     // 活跃
+        Canceled,   // 已取消
+        Defeated,   // 已失败
+        Succeeded,  // 已成功
+        Queued,     // 已排队
+        Expired,    // 已过期
+        Executed    // 已执行
     }
 
+    /// @notice 曾经提出过的所有提案的正式记录
     /// @notice The official record of all proposals ever proposed
     mapping (uint => Proposal) public proposals;
 
+    /// @notice 每个提案人的最新提案
     /// @notice The latest proposal for each proposer
     mapping (address => uint) public latestProposalIds;
 
+    /// @notice EIP-712的合约域hash
     /// @notice The EIP-712 typehash for the contract's domain
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
 
+    /// @notice EIP-712的代理人构造体的hash
     /// @notice The EIP-712 typehash for the ballot struct used by the contract
     bytes32 public constant BALLOT_TYPEHASH = keccak256("Ballot(uint256 proposalId,bool support)");
 
+    /// @notice 新提案事件
     /// @notice An event emitted when a new proposal is created
     event ProposalCreated(uint id, address proposer, address[] targets, uint[] values, string[] signatures, bytes[] calldatas, uint startBlock, uint endBlock, string description);
 
+    /// @notice 对提案进行投票时发出的事件
     /// @notice An event emitted when a vote has been cast on a proposal
     event VoteCast(address voter, uint proposalId, bool support, uint votes);
 
+    /// @notice 取消提案后发出的事件
     /// @notice An event emitted when a proposal has been canceled
     event ProposalCanceled(uint id);
 
+    /// @notice 当提案已在时间锁中排队时发出的事件
     /// @notice An event emitted when a proposal has been queued in the Timelock
     event ProposalQueued(uint id, uint eta);
 
+    /// @notice 在时间锁中执行投标后发出的事件
     /// @notice An event emitted when a proposal has been executed in the Timelock
     event ProposalExecuted(uint id);
 
+    /**
+     * @dev 构造函数
+     * @param timelock_ 时间锁合约地址 
+     * @param sushi_ SushiToken 合约地址
+     * @param guardian_ 监护人地址
+     */
     constructor(address timelock_, address sushi_, address guardian_) public {
         timelock = TimelockInterface(timelock_);
         sushi = SushiToken(sushi_);
         guardian = guardian_;
     }
 
+    /**
+     * @dev 提案方法
+     * @param timelock_ 时间锁合约地址 
+     * @param sushi_ SushiToken 合约地址
+     * @param guardian_ 监护人地址
+     */
     function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) public returns (uint) {
         require(sushi.getPriorVotes(msg.sender, sub256(block.number, 1)) > proposalThreshold(), "GovernorAlpha::propose: proposer votes below proposal threshold");
         require(targets.length == values.length && targets.length == signatures.length && targets.length == calldatas.length, "GovernorAlpha::propose: proposal function information arity mismatch");
