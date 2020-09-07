@@ -3,102 +3,186 @@ const SushiToken = artifacts.require('SushiToken');
 const MasterChef = artifacts.require('MasterChef');
 const MockERC20 = artifacts.require('MockERC20');
 
+// 测试主厨合约,生成5个帐号
 contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
-    beforeEach(async () => {
+    beforeEach(async () => {// 每次重新部署SushiToken合约,以alice身份
         this.sushi = await SushiToken.new({ from: alice });
     });
 
-    it('should set correct state variables', async () => {
+    it('验证正确的状态变量', async () => {
+        // 部署主厨合约
+        // 参数:(SushiToken地址,dev帐号,每块创建1000个SUSHI令牌,SUSHI挖掘在0块开始,奖励在1000块结束)
+        // 以alice身份部署
         this.chef = await MasterChef.new(this.sushi.address, dev, '1000', '0', '1000', { from: alice });
+        // alice将SushiToken的Owner身份转移给主厨合约地址
         await this.sushi.transferOwnership(this.chef.address, { from: alice });
+        // SushiToken地址
         const sushi = await this.chef.sushi();
+        // 开发者帐号地址
         const devaddr = await this.chef.devaddr();
+        // owner地址
         const owner = await this.sushi.owner();
+        //验证
         assert.equal(sushi.valueOf(), this.sushi.address);
         assert.equal(devaddr.valueOf(), dev);
         assert.equal(owner.valueOf(), this.chef.address);
     });
 
-    it('should allow dev and only dev to update dev', async () => {
+    it('验证开发者帐号权限', async () => {
+        // 部署主厨合约
+        // 参数:(SushiToken地址,dev帐号,每块创建1000个SUSHI令牌,SUSHI挖掘在0块开始,奖励在1000块结束)
+        // 以alice身份部署
         this.chef = await MasterChef.new(this.sushi.address, dev, '1000', '0', '1000', { from: alice });
+        // 验证开发者帐号地址
         assert.equal((await this.chef.devaddr()).valueOf(), dev);
+        // 错误帐号设置开发者帐号
         await expectRevert(this.chef.dev(bob, { from: bob }), 'dev: wut?');
+        // 将开发者帐号设置为bob
         await this.chef.dev(bob, { from: dev });
+        // 验证新开发者帐号
         assert.equal((await this.chef.devaddr()).valueOf(), bob);
+        // 再次修改开发者帐号
         await this.chef.dev(alice, { from: bob });
+        // 验证新开发者帐号
         assert.equal((await this.chef.devaddr()).valueOf(), alice);
     })
 
     context('With ERC/LP token added to the field', () => {
-        beforeEach(async () => {
+        beforeEach(async () => {// 每次验证之前执行
+            // lp = 部署模拟erc20('LPToken', 'LP', '10000000000')
             this.lp = await MockERC20.new('LPToken', 'LP', '10000000000', { from: minter });
+            // 将1000个lp从minter发送到alice账户
             await this.lp.transfer(alice, '1000', { from: minter });
+            // 将1000个lp从minter发送到bob账户
             await this.lp.transfer(bob, '1000', { from: minter });
+            // 将1000个lp从minter发送到carol账户
             await this.lp.transfer(carol, '1000', { from: minter });
+            // lp2 = 部署模拟erc20('LPToken2', 'LP2', '10000000000')
             this.lp2 = await MockERC20.new('LPToken2', 'LP2', '10000000000', { from: minter });
+            // 将1000个lp2从minter发送到alice账户
             await this.lp2.transfer(alice, '1000', { from: minter });
+            // 将1000个lp2从minter发送到bob账户
             await this.lp2.transfer(bob, '1000', { from: minter });
+            // 将1000个lp2从minter发送到carol账户
             await this.lp2.transfer(carol, '1000', { from: minter });
         });
 
-        it('should allow emergency withdraw', async () => {
+        it('验证紧急撤出', async () => {
+            // 每块100的耕种率，从第100块开始，直到第1000块为止 
             // 100 per block farming rate starting at block 100 with bonus until block 1000
+            // 部署主厨合约
+            // 参数:(SushiToken地址,dev帐号,每块创建100个SUSHI令牌,SUSHI挖掘在100块开始,奖励在1000块结束)
+            // 以alice身份部署
             this.chef = await MasterChef.new(this.sushi.address, dev, '100', '100', '1000', { from: alice });
+            // 将新的lp添加到池中,参数:(分配给该池的分配点数100,lp地址,触发更新所有池的奖励变量)
             await this.chef.add('100', this.lp.address, true);
+            // bob批准主厨合约拥有1000个token权限
             await this.lp.approve(this.chef.address, '1000', { from: bob });
+            // bob将100个LP令牌存入主厨合约进行SUSHI分配
             await this.chef.deposit(0, '100', { from: bob });
+            // 验证当前bob的lp余额为900
             assert.equal((await this.lp.balanceOf(bob)).valueOf(), '900');
+            // 调用紧急提款方法,由bob调用,取出lp
             await this.chef.emergencyWithdraw(0, { from: bob });
+            // 验证当前bob的lp余额为1000
             assert.equal((await this.lp.balanceOf(bob)).valueOf(), '1000');
         });
 
-        it('should give out SUSHIs only after farming time', async () => {
+        it('验证耕种时间过后才可以收到SUSHIs', async () => {
+            // 每块100的耕种率，从第100块开始，直到第1000块为止
             // 100 per block farming rate starting at block 100 with bonus until block 1000
+            // 部署主厨合约
+            // 参数:(SushiToken地址,dev帐号,每块创建100个SUSHI令牌,SUSHI挖掘在100块开始,奖励在1000块结束)
+            // 以alice身份部署
             this.chef = await MasterChef.new(this.sushi.address, dev, '100', '100', '1000', { from: alice });
+            // 将sushi的owner转移给主厨合约
             await this.sushi.transferOwnership(this.chef.address, { from: alice });
+            // 将新的lp添加到池中,参数:(分配给该池的分配点数100,lp地址,触发更新所有池的奖励变量)
             await this.chef.add('100', this.lp.address, true);
+            // bob批准主厨合约拥有1000个token权限
             await this.lp.approve(this.chef.address, '1000', { from: bob });
+            // bob将100个LP令牌存入主厨合约进行SUSHI分配
             await this.chef.deposit(0, '100', { from: bob });
+            // 时间推移到89块
             await time.advanceBlockTo('89');
+            // bob将0个LP令牌存入主厨合约进行SUSHI分配,当前块号到达90
             await this.chef.deposit(0, '0', { from: bob }); // block 90
+            // 验证bob在sushi的余额为0
             assert.equal((await this.sushi.balanceOf(bob)).valueOf(), '0');
+            // 时间推移到94块
             await time.advanceBlockTo('94');
+            // bob将0个LP令牌存入主厨合约进行SUSHI分配,当前块号到达95
             await this.chef.deposit(0, '0', { from: bob }); // block 95
+            // 验证bob在sushi的余额为0
             assert.equal((await this.sushi.balanceOf(bob)).valueOf(), '0');
+            // 时间推移到99块
             await time.advanceBlockTo('99');
+            // bob将0个LP令牌存入主厨合约进行SUSHI分配,当前块号到达100
             await this.chef.deposit(0, '0', { from: bob }); // block 100
+            // 验证bob在sushi的余额为0
             assert.equal((await this.sushi.balanceOf(bob)).valueOf(), '0');
+            // 时间推移到100块
             await time.advanceBlockTo('100');
+            // bob将0个LP令牌存入主厨合约进行SUSHI分配,当前块号到达101
             await this.chef.deposit(0, '0', { from: bob }); // block 101
+            // 验证bob在sushi的余额为1000
             assert.equal((await this.sushi.balanceOf(bob)).valueOf(), '1000');
+            // 时间推移到104块
             await time.advanceBlockTo('104');
+            // bob将0个LP令牌存入主厨合约进行SUSHI分配,当前块号到达105
             await this.chef.deposit(0, '0', { from: bob }); // block 105
+            // 验证bob在sushi的余额为5000
             assert.equal((await this.sushi.balanceOf(bob)).valueOf(), '5000');
+            // 验证开发者帐号在sushi的余额为500
             assert.equal((await this.sushi.balanceOf(dev)).valueOf(), '500');
+            // 验证sushi的总量为5500
             assert.equal((await this.sushi.totalSupply()).valueOf(), '5500');
         });
 
-        it('should not distribute SUSHIs if no one deposit', async () => {
+        it('验证如果没有人存款，则不应该分发SUSHIs', async () => {
+            // 每块100的耕种率，从第200块开始，直到第1000块为止
             // 100 per block farming rate starting at block 200 with bonus until block 1000
+            // 部署主厨合约
+            // 参数:(SushiToken地址,dev帐号,每块创建100个SUSHI令牌,SUSHI挖掘在200块开始,奖励在1000块结束)
+            // 以alice身份部署
             this.chef = await MasterChef.new(this.sushi.address, dev, '100', '200', '1000', { from: alice });
+            // 将sushi的owner转移给主厨合约
             await this.sushi.transferOwnership(this.chef.address, { from: alice });
+            // 将新的lp添加到池中,参数:(分配给该池的分配点数100,lp地址,触发更新所有池的奖励变量)
             await this.chef.add('100', this.lp.address, true);
+            // bob批准主厨合约拥有1000个token权限
             await this.lp.approve(this.chef.address, '1000', { from: bob });
+            // 时间推移到199块
             await time.advanceBlockTo('199');
+            // 验证sushi的总量为0
             assert.equal((await this.sushi.totalSupply()).valueOf(), '0');
+            // 时间推移到204块
             await time.advanceBlockTo('204');
+            // 验证sushi的总量为0
             assert.equal((await this.sushi.totalSupply()).valueOf(), '0');
+            // 时间推移到209块
             await time.advanceBlockTo('209');
+            // bob将10个LP令牌存入主厨合约进行SUSHI分配,当前块号到达210
             await this.chef.deposit(0, '10', { from: bob }); // block 210
+            // 验证sushi的总量为0
             assert.equal((await this.sushi.totalSupply()).valueOf(), '0');
+            // 验证bob在sushi的余额为0
             assert.equal((await this.sushi.balanceOf(bob)).valueOf(), '0');
+            // 验证开发者帐号在sushi的余额为0
             assert.equal((await this.sushi.balanceOf(dev)).valueOf(), '0');
+            // 验证bob在lp的余额为990
             assert.equal((await this.lp.balanceOf(bob)).valueOf(), '990');
+            // 时间推移到219块
             await time.advanceBlockTo('219');
+            // bob将10个LP令牌从主厨合约取出,当前块号到达220
             await this.chef.withdraw(0, '10', { from: bob }); // block 220
+            // 验证sushi的总量为11000
             assert.equal((await this.sushi.totalSupply()).valueOf(), '11000');
+            // 验证bob在sushi的余额为10000
             assert.equal((await this.sushi.balanceOf(bob)).valueOf(), '10000');
+            // 验证开发者帐号在sushi的余额为1000
             assert.equal((await this.sushi.balanceOf(dev)).valueOf(), '1000');
+            // 验证bob在lp的余额为1000
             assert.equal((await this.lp.balanceOf(bob)).valueOf(), '1000');
         });
 
