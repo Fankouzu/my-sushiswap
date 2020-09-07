@@ -14,12 +14,7 @@ pragma solidity 0.6.12;
 // XXX: import "./SafeMath.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-contract Timelock {
-    using SafeMath for uint;
-
-    event NewAdmin(address indexed newAdmin);
-    event NewPendingAdmin(address indexed newPendingAdmin);
-    event NewDelay(uint indexed newDelay);
+contract Timelock {a628845c523975493da88ac3641a803e92fa5d54
     event CancelTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
     event ExecuteTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
     event QueueTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature, bytes data, uint eta);
