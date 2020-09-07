@@ -21,8 +21,14 @@ pragma solidity 0.6.12;
 
 // XXX: import "./SafeMath.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+
 // 时间锁合约 地址 0x9a8541ddf3a932a9a922b607e9cf7301f1d47bd1
 contract Timelock {
+    using SafeMath for uint256;
+
+    event NewAdmin(address indexed newAdmin);
+    event NewPendingAdmin(address indexed newPendingAdmin);
+    event NewDelay(uint256 indexed newDelay);
     event CancelTransaction(
         bytes32 indexed txHash,
         address indexed target,
@@ -59,8 +65,6 @@ contract Timelock {
 
     mapping(bytes32 => bool) public queuedTransactions;
 
-    //'admin_': '0xF942Dba4159CB61F8AD88ca4A83f5204e8F4A6bd',
-    //'delay_': '172800',
     constructor(address admin_, uint256 delay_) public {
         require(
             delay_ >= MINIMUM_DELAY,

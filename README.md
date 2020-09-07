@@ -23,6 +23,8 @@ https://app.sushiswap.org. Feel free to read the code. More details coming soon.
 - setPendingAdmin - https://etherscan.io/tx/0x8e2f3f27e616d8be2d2d3095a996cf4c0af8c9c757c7ff034d352c11cc082394
 - 抛售的交易 - https://etherscan.io/tx/0x419a835b33eb03481e56a5f964c1c31017ab196cb7bb4390228cabcf50dfd6f1
 
+## sushi新管理员地址
+https://etherscan.io/address/0xd57581d9e42e9032e6f60422fa619b4a4574ba79
 ## License
 
 WTFPL

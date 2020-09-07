@@ -97,61 +97,61 @@ contract GovernorAlpha {
 
     // 提案构造体
     struct Proposal {
-        /// @notice 提案的唯一id
-        /// @notice Unique id for looking up a proposal
+        // @notice 提案的唯一id
+        // @notice Unique id for looking up a proposal
         uint256 id;
-        /// @notice 提案创建者
-        /// @notice Creator of the proposal
+        // @notice 提案创建者
+        // @notice Creator of the proposal
         address proposer;
-        /// @notice 提案可在表决成功后设置的时间戳
-        /// @notice The timestamp that the proposal will be available for execution, set once the vote succeeds
+        // @notice  提案可在表决成功后设置的时间戳
+        // @notice  The timestamp that the proposal will be available for execution, set once the vote succeeds
         uint256 eta;
-        /// @notice 要进行调用的目标地址的有序列表
-        /// @notice the ordered list of target addresses for calls to be made
+        // @notice  要进行调用的目标地址的有序列表
+        // @notice  the ordered list of target addresses for calls to be made
         address[] targets;
-        /// @notice 要传递给要进行的调用的值（即msg.value）的有序列表
-        /// @notice The ordered list of values (i.e. msg.value) to be passed to the calls to be made
+        // @notice  要传递给要进行的调用的值（即msg.value）的有序列表
+        // @notice  The ordered list of values (i.e. msg.value) to be passed to the calls to be made
         uint256[] values;
-        /// @notice 要调用的功能签名的有序列表
-        /// @notice The ordered list of function signatures to be called
+        // @notice  要调用的功能签名的有序列表
+        // @notice  The ordered list of function signatures to be called
         string[] signatures;
-        /// @notice 要传递给每个调用方法的调用数据的有序列表
-        /// @notice The ordered list of calldata to be passed to each call
+        // @notice  要传递给每个调用方法的调用数据的有序列表
+        // @notice  The ordered list of calldata to be passed to each call
         bytes[] calldatas;
-        /// @notice 开始投票的区块：持有人必须在此区块之前委派投票
-        /// @notice The block at which voting begins: holders must delegate their votes prior to this block
+        // @notice  开始投票的区块：持有人必须在此区块之前委派投票
+        // @notice The block at which voting begins: holders must delegate their votes prior to this block
         uint256 startBlock;
-        /// @notice 投票结束的区块：必须在该区块之前进行投票
-        /// @notice The block at which voting ends: votes must be cast prior to this block
+        // @notice  投票结束的区块：必须在该区块之前进行投票
+        // @notice  The block at which voting ends: votes must be cast prior to this block
         uint256 endBlock;
-        /// @notice 目前赞成该提案的票数
-        /// @notice Current number of votes in favor of this proposal
+        // @notice  目前赞成该提案的票数
+        // @notice  Current number of votes in favor of this proposal
         uint256 forVotes;
-        /// @notice 目前反对该提案的票数
-        /// @notice Current number of votes in opposition to this proposal
+        // @notice  目前反对该提案的票数
+        // @notice  Current number of votes in opposition to this proposal
         uint256 againstVotes;
-        /// @notice 标记该提案是否已被取消的标志
-        /// @notice Flag marking whether the proposal has been canceled
+        // @notice  标记该提案是否已被取消的标志
+        // @notice  Flag marking whether the proposal has been canceled
         bool canceled;
-        /// @notice 标记该提案是否已执行的标志
-        /// @notice Flag marking whether the proposal has been executed
+        // @notice  标记该提案是否已执行的标志
+        // @notice  Flag marking whether the proposal has been executed
         bool executed;
-        /// @notice 整个选民的选票收据
-        /// @notice Receipts of ballots for the entire set of voters
+        // @notice  整个选民的选票收据
+        // @notice  Receipts of ballots for the entire set of voters
         mapping(address => Receipt) receipts;
     }
 
     /// @notice 投票者选票收据构造体
     /// @notice Ballot receipt record for a voter
     struct Receipt {
-        /// @notice 是否已投票
-        /// @notice Whether or not a vote has been cast
+        // @notice  是否已投票
+        // @notice  Whether or not a vote has been cast
         bool hasVoted;
-        /// @notice 选民是否支持提案
-        /// @notice Whether or not the voter supports the proposal
+        // @notice  选民是否支持提案
+        // @notice  Whether or not the voter supports the proposal
         bool support;
-        /// @notice 选民所投票的票数
-        /// @notice The number of votes the voter had, which were cast
+        // @notice  选民所投票的票数
+        // @notice  The number of votes the voter had, which were cast
         uint256 votes;
     }
 
@@ -241,9 +241,11 @@ contract GovernorAlpha {
 
     /**
      * @dev 提案方法
-     * @param timelock_ 时间锁合约地址
-     * @param sushi_ SushiToken 合约地址
-     * @param guardian_ 监护人地址
+     * @param targets 目标地址数组
+     * @param values 值数组
+     * @param signatures 签名数组
+     * @param calldatas 执行元数据
+     * @param description 说明
      */
     function propose(
         address[] memory targets,

@@ -3,7 +3,7 @@ pragma solidity 0.6.12;
 import "./uniswapv2/interfaces/IUniswapV2Pair.sol";
 import "./uniswapv2/interfaces/IUniswapV2Factory.sol";
 
-// 迁移合约
+// 迁移合约, 目前尚未部署,有消息称将采用新版本的迁移合约
 contract Migrator {
     // 主厨合约地址
     address public chef;

@@ -24,8 +24,8 @@ contract SushiToken is ERC20("SushiToken", "SUSHI"), Ownable {
     // Which is copied and modified from COMPOUND:
     // https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/Comp.sol
 
-    /// @notice 每个账户的委托人记录
-    /// @notice A record of each accounts delegate
+    // @notice 每个账户的委托人记录
+    // @notice A record of each accounts delegate
     mapping (address => address) internal _delegates;
 
     /// @notice 一个检查点，用于标记给定块中的投票数
