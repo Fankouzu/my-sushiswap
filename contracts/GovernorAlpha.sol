@@ -239,14 +239,6 @@ contract GovernorAlpha {
         guardian = guardian_;
     }
 
-    /**
-     * @dev 提案方法
-     * @param targets 目标地址数组
-     * @param values 值数组
-     * @param signatures 签名数组
-     * @param calldatas 执行元数据
-     * @param description 说明
-     */
     function propose(
         address[] memory targets,
         uint256[] memory values,
