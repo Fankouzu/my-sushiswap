@@ -4,6 +4,10 @@
 
 https://app.sushiswap.org. Feel free to read the code. More details coming soon.
 
+## 中文文档
+
+- [主厨合约](./MasterChef.md)
+
 ## Deployed Contracts / Hash
 
 - 主厨Nomi的地址 - https://etherscan.io/address/0xf942dba4159cb61f8ad88ca4a83f5204e8f4a6bd
