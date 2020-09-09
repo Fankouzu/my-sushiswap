@@ -54,7 +54,7 @@ contract MasterChef is Ownable {
     // Info of each user.
     struct UserInfo {
         uint256 amount; // How many LP tokens the user has provided.用户提供了多少个LP令牌。
-        uint256 rewardDebt; // Reward debt. See explanation below.债务奖励。请参阅下面的说明。
+        uint256 rewardDebt; // Reward debt. See explanation below.已奖励数额。请参阅下面的说明。
         //
         // 我们在这里做一些有趣的数学运算。基本上，在任何时间点，授予用户但待分配的SUSHI数量为：
         // We do some fancy math here. Basically, any point in time, the amount of SUSHIs
@@ -63,15 +63,15 @@ contract MasterChef is Ownable {
         //   待处理的奖励 =（user.amount * pool.accSushiPerShare）-user.rewardDebt
         //   pending reward = (user.amount * pool.accSushiPerShare) - user.rewardDebt
         //
-        // 每当用户将LP令牌存入或提取到池中时。这是发生了什么：
+        // 每当用户将lpToken存入到池子中或提取时。这是发生了什么：
         // Whenever a user deposits or withdraws LP tokens to a pool. Here's what happens:
-        //   1. 池子的“ accSushiPerShare”（和“ lastRewardBlock”）被更新
+        //   1. 池子的每股累积SUSHI(accSushiPerShare)和分配发生的最后一个块号(lastRewardBlock)被更新
         //   1. The pool's `accSushiPerShare` (and `lastRewardBlock`) gets updated.
-        //   2. 用户收到发送到其地址的待处理奖励。
+        //   2. 用户收到待处理奖励。
         //   2. User receives the pending reward sent to his/her address.
         //   3. 用户的“amount”数额被更新
         //   3. User's `amount` gets updated.
-        //   4. 用户的`rewardDebt`债务奖励得到更新
+        //   4. 用户的`rewardDebt`已奖励数额得到更新
         //   4. User's `rewardDebt` gets updated.
     }
 
@@ -226,7 +226,7 @@ contract MasterChef is Ownable {
     }
 
     /**
-     * @dev 将lp令牌迁移到另一个lp合约。可以被任何人呼叫。我们相信移民合同是正确的
+     * @dev 将lp令牌迁移到另一个lp合约。可以被任何人呼叫。我们相信迁移合约是正确的
      * @param _pid 池子id,池子数组中的索引
      */
     // Migrate lp token to another lp contract. Can be called by anyone. We trust that migrator contract is good.
@@ -250,9 +250,10 @@ contract MasterChef is Ownable {
     }
 
     /**
-     * @dev 将给定的_from的奖励乘数返回到_to块
+     * @dev 给出from和to的块号,返回奖励乘积
      * @param _from from块号
      * @param _to to块号
+     * @return 奖励乘积
      */
     // Return reward multiplier over the given _from to _to block.
     function getMultiplier(uint256 _from, uint256 _to)
@@ -279,9 +280,10 @@ contract MasterChef is Ownable {
     }
 
     /**
-     * @dev 查看功能以查看前端的处理中的SUSHI
+     * @dev 查看功能以查看用户的处理中尚未领取的SUSHI
      * @param _pid 池子id
      * @param _user 用户地址
+     * @return 处理中尚未领取的SUSHI数额
      */
     // View function to see pending SUSHIs on frontend.
     function pendingSushi(uint256 _pid, address _user)
@@ -295,7 +297,7 @@ contract MasterChef is Ownable {
         UserInfo storage user = userInfo[_pid][_user];
         // 每股累积SUSHI
         uint256 accSushiPerShare = pool.accSushiPerShare;
-        // LPtoken的供应量 = 当前合约在`池子信息.lotoken地址`的余额
+        // LPtoken的供应量 = 当前合约在`池子信息.lpToken地址`的余额
         uint256 lpSupply = pool.lpToken.balanceOf(address(this));
         // 如果当前区块号 > 池子信息.分配发生的最后一个块号 && LPtoken的供应量 != 0
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
@@ -314,7 +316,7 @@ contract MasterChef is Ownable {
                 sushiReward.mul(1e12).div(lpSupply)
             );
         }
-        // 返回 用户.已添加的数额 + 每股累积SUSHI / 1e12 - 用户.债务奖励
+        // 返回 用户.已添加的数额 * 每股累积SUSHI / 1e12 - 用户.已奖励数额
         return user.amount.mul(accSushiPerShare).div(1e12).sub(user.rewardDebt);
     }
 
@@ -388,7 +390,7 @@ contract MasterChef is Ownable {
         updatePool(_pid);
         // 如果用户已添加的数额>0
         if (user.amount > 0) {
-            // 待定数额 = 用户.已添加的数额 * 池子.每股累积SUSHI / 1e12 - 用户.债务奖励
+            // 待定数额 = 用户.已添加的数额 * 池子.每股累积SUSHI / 1e12 - 用户.已奖励数额
             uint256 pending = user
                 .amount
                 .mul(pool.accSushiPerShare)
@@ -405,7 +407,7 @@ contract MasterChef is Ownable {
         );
         // 用户.已添加的数额  = 用户.已添加的数额 + _amount数额
         user.amount = user.amount.add(_amount);
-        // 用户.债务奖励 = 用户.已添加的数额 * 池子.每股累积SUSHI / 1e12
+        // 用户.已奖励数额 = 用户.已添加的数额 * 池子.每股累积SUSHI / 1e12
         user.rewardDebt = user.amount.mul(pool.accSushiPerShare).div(1e12);
         // 触发存款事件
         emit Deposit(msg.sender, _pid, _amount);
@@ -426,7 +428,7 @@ contract MasterChef is Ownable {
         require(user.amount >= _amount, "withdraw: not good");
         // 将给定池的奖励变量更新为最新
         updatePool(_pid);
-        // 待定数额 = 用户.已添加的数额 * 池子.每股累积SUSHI / 1e12 - 用户.债务奖励
+        // 待定数额 = 用户.已添加的数额 * 池子.每股累积SUSHI / 1e12 - 用户.已奖励数额
         uint256 pending = user.amount.mul(pool.accSushiPerShare).div(1e12).sub(
             user.rewardDebt
         );
@@ -434,7 +436,7 @@ contract MasterChef is Ownable {
         safeSushiTransfer(msg.sender, pending);
         // 用户.已添加的数额  = 用户.已添加的数额 - _amount数额
         user.amount = user.amount.sub(_amount);
-        // 用户.债务奖励 = 用户.已添加的数额 * 池子.每股累积SUSHI / 1e12
+        // 用户.已奖励数额 = 用户.已添加的数额 * 池子.每股累积SUSHI / 1e12
         user.rewardDebt = user.amount.mul(pool.accSushiPerShare).div(1e12);
         // 调用池子.lptoken的安全发送方法,将_amount数额的lp token从当前合约发送到当前用户
         pool.lpToken.safeTransfer(address(msg.sender), _amount);
@@ -458,7 +460,7 @@ contract MasterChef is Ownable {
         emit EmergencyWithdraw(msg.sender, _pid, user.amount);
         // 用户.已添加数额 = 0
         user.amount = 0;
-        // 用户.债务奖励 = 0
+        // 用户.已奖励数额 = 0
         user.rewardDebt = 0;
     }
 
