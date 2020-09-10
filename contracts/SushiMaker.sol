@@ -10,19 +10,19 @@ contract SushiMaker {
     using SafeMath for uint256;
     //工厂合约地址
     IUniswapV2Factory public factory;
-    //sushi Bar地址
+    //Sushi Bar地址
     address public bar;
-    //sushi Token地址
+    //Sushi Token地址
     address public sushi;
-    //weth地址
+    //WETH地址
     address public weth;
 
     /**
     * @dev 构造函数
     * @param _factory 工厂合约地址
-    * @param _bar sushi Bar地址
-    * @param _sushi sushi Token地址
-    * @param _weth weth地址
+    * @param _bar Sushi Bar地址
+    * @param _sushi Sushi Token地址
+    * @param _weth WETH地址
      */
     //以下是SushiMaker合约布署时构造函数的参数
     // _factory:'0xc0aee478e3658e2610c5f7a4a2e1777ce9e4f2ac',
@@ -55,11 +55,11 @@ contract SushiMaker {
         IUniswapV2Pair pair = IUniswapV2Pair(factory.getPair(token0, token1));
         // 调用配对合约的transfer方法,将当前合约的余额发送到配对合约地址上
         pair.transfer(address(pair), pair.balanceOf(address(this)));
-        // 调用配对合约的销毁方法,将流动性token销毁,之后配对合约将会为当前合约地址发送token0和token1
+        // 调用配对合约的销毁方法,将流动性token销毁,之后配对合约将会向当前合约地址发送token0和token1
         pair.burn(address(this));
-        // 将token0和token1全部交换为weth并发送到weth和sushiToken的配对合约上
+        // 将token0和token1全部交换为WETH并发送到weth和SushiToken的配对合约上
         uint256 wethAmount = _toWETH(token0) + _toWETH(token1);
-        // 将weth全部交换为sushiToken并发送到sushiBar合约上
+        // 将weth全部交换为SushiToken并发送到SushiBar合约上
         _toSUSHI(wethAmount);
     }
 
@@ -68,7 +68,7 @@ contract SushiMaker {
     * @param token token
      */
     function _toWETH(address token) internal returns (uint256) {
-        // 如果token地址是sushi Token地址
+        // 如果token地址是Sushi Token地址
         if (token == sushi) {
             // 数额 = 当前合约地址在token地址上的余额
             uint256 amount = IERC20(token).balanceOf(address(this));
@@ -77,16 +77,16 @@ contract SushiMaker {
             // 返回0
             return 0;
         }
-        // 如果token地址是weth地址
+        // 如果token地址是WETH地址
         if (token == weth) {
             // 数额 = 当前合约地址在token地址上的余额
             uint256 amount = IERC20(token).balanceOf(address(this));
-            // 将数额从当前合约发送到sushi布署的工厂合约上的weth和sushiToken的配对合约地址上
+            // 将数额从当前合约发送到sushi布署的工厂合约上的WETH和SushiToken的配对合约地址上
             IERC20(token).transfer(factory.getPair(weth, sushi), amount);
             // 返回数额
             return amount;
         }
-        // 实例化token地址和weth地址的配对合约
+        // 实例化token地址和WETH地址的配对合约
         IUniswapV2Pair pair = IUniswapV2Pair(factory.getPair(token, weth));
         // 如果配对合约地址 == 0地址 返回0
         if (address(pair) == address(0)) {
@@ -96,7 +96,7 @@ contract SushiMaker {
         (uint256 reserve0, uint256 reserve1, ) = pair.getReserves();
         // 找到token0
         address token0 = pair.token0();
-        // 排序行程储备量In和储备量Out
+        // 排序形成储备量In和储备量Out
         (uint256 reserveIn, uint256 reserveOut) = token0 == token
             ? (reserve0, reserve1)
             : (reserve1, reserve0);
@@ -116,7 +116,7 @@ contract SushiMaker {
             : (amountOut, uint256(0));
         // 将输入数额发送到配对合约
         IERC20(token).transfer(address(pair), amountIn);
-        // 执行配对合约的交换方法(输出数额0,输出数额1,发送到weth和sushiToken的配对合约上)
+        // 执行配对合约的交换方法(输出数额0,输出数额1,发送到WETH和token的配对合约上)
         pair.swap(
             amount0Out,
             amount1Out,
@@ -132,7 +132,7 @@ contract SushiMaker {
     * @param amountIn 输入数额
      */
     function _toSUSHI(uint256 amountIn) internal {
-        // 获取sushiToken和weth的配对合约地址,并实例化配对合约
+        // 获取SushiToken和WETH的配对合约地址,并实例化配对合约
         IUniswapV2Pair pair = IUniswapV2Pair(factory.getPair(weth, sushi));
         // 获取配对合约的储备量0,储备量1
         (uint256 reserve0, uint256 reserve1, ) = pair.getReserves();
@@ -154,7 +154,7 @@ contract SushiMaker {
         (uint256 amount0Out, uint256 amount1Out) = token0 == weth
             ? (uint256(0), amountOut)
             : (amountOut, uint256(0));
-        // 执行配对合约的交换方法(输出数额0,输出数额1,发送到sushiBar合约上)
+        // 执行配对合约的交换方法(输出数额0,输出数额1,发送到SushiBar合约上)
         pair.swap(amount0Out, amount1Out, bar, new bytes(0));
     }
 }
