@@ -11,15 +11,15 @@ contract SushiBar is ERC20("SushiBar", "xSUSHI"){
 
     /**
     * @dev 构造函数
-    * @param _sushi sushi Token地址
+    * @param _sushi Sushi Token地址
      */
     constructor(IERC20 _sushi) public {
         sushi = _sushi;// 0x6b3595068778dd592e39a122f4f5a5cf09c90fe2
     }
 
     /**
-    * @dev 进入吧台,将自己的sushiToken发送到合约换取份额
-    * @param _amount 数额
+    * @dev 进入吧台,将自己的SushiToken发送到合约换取份额
+    * @param _amount SushiToken数额
      */
     // 进入吧台, 支付一些Sushi, 赚取份额
     // Enter the bar. Pay some SUSHIs. Earn some shares.
@@ -43,8 +43,8 @@ contract SushiBar is ERC20("SushiBar", "xSUSHI"){
     }
 
     /**
-    * @dev 离开吧台,取回自己的sushiToken
-    * @param _share 份额
+    * @dev 离开吧台,取回自己的SushiToken
+    * @param _share SUSHIs数额
      */
     // Leave the bar. Claim back your SUSHIs.
     function leave(uint256 _share) public {

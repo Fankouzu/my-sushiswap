@@ -5,6 +5,7 @@
 - 交易hash https://etherscan.io/tx/0x5489c98aa634078471646e32a3a846c8d413f055ce10d06bd2260f4e71d1bc63
 
 ## 没有构造函数
+## ERC20标准方法略
 
 ## 状态变量,只读方法
 
@@ -40,8 +41,6 @@ mapping (address => mapping (uint32 => Checkpoint)) public checkpoints;
 ```
 > 下文中注意区别`检查点`映射和`检查点数`映射,还有`检查点构造体`
 ## 合约方法
-
-### 标准ERC20方法略过
 
 ### mint 铸造方法
 - 只能由所有者（主厨合约）调用
