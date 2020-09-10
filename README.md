@@ -21,7 +21,8 @@ https://app.sushiswap.org. Feel free to read the code. More details coming soon.
 - SushiMaker - https://etherscan.io/address/0x54844afe358ca98e4d09aae869f25bfe072e1b1a
 - MultiSigWalletWithDailyLimit - https://etherscan.io/address/0xf73b31c07e3f8ea8f7c59ac58ed1f878708c8a76
 - Timelock - https://etherscan.io/address/0x9a8541ddf3a932a9a922b607e9cf7301f1d47bd1
-- new migrator - https://etherscan.io/address/0x93ac37f13bffcfe181f2ab359cc7f67d9ae5cdfd
+- old migrator - https://etherscan.io/address/0x818180acb9d300ffc023be2300addb6879d94830
+- migrator - https://etherscan.io/address/0x93ac37f13bffcfe181f2ab359cc7f67d9ae5cdfd
 
 ## 大厨操作
 - setFeeToSetter - https://etherscan.io/tx/0x2032ce062801e5d9ba03d7717491df6eaba513e5ae536cb97726f58daa66cd92
@@ -34,7 +35,7 @@ https://app.sushiswap.org. Feel free to read the code. More details coming soon.
 > 将时间锁合约管理员设置为0xd57581d9e42e9032e6f60422fa619b4a4574ba79
 - 抛售的交易 - https://etherscan.io/tx/0x419a835b33eb03481e56a5f964c1c31017ab196cb7bb4390228cabcf50dfd6f1
 
-## 新feeToSetter操作
+## SBF操作
 - 地址 - https://etherscan.io/address/0xd57581d9e42e9032e6f60422fa619b4a4574ba79
 - acceptAdmin - https://etherscan.io/tx/0x251508ad94261ed3de6eff3e86bf888a4b40ce49fdbe29189e6d48d7b6c6804b
 > 接受时间锁合约的管理员
