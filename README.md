@@ -8,6 +8,7 @@ https://app.sushiswap.org. Feel free to read the code. More details coming soon.
 
 - [主厨合约文档](./MasterChef.md)
 - [SushiToken文档](./SushiToken.md)
+- [迁移合约文档](./Migrator.md)
 
 ## Deployed Contracts / Hash
 
