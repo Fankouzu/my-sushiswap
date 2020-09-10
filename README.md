@@ -6,7 +6,8 @@ https://app.sushiswap.org. Feel free to read the code. More details coming soon.
 
 ## 中文文档
 
-- [主厨合约](./MasterChef.md)
+- [主厨合约文档](./MasterChef.md)
+- [SushiToken文档](./SushiToken.md)
 
 ## Deployed Contracts / Hash
 
@@ -20,7 +21,7 @@ https://app.sushiswap.org. Feel free to read the code. More details coming soon.
 - SushiMaker - https://etherscan.io/address/0x54844afe358ca98e4d09aae869f25bfe072e1b1a
 - MultiSigWalletWithDailyLimit - https://etherscan.io/address/0xf73b31c07e3f8ea8f7c59ac58ed1f878708c8a76
 - Timelock - https://etherscan.io/address/0x9a8541ddf3a932a9a922b607e9cf7301f1d47bd1
-- migrator - https://etherscan.io/address/0x93ac37f13bffcfe181f2ab359cc7f67d9ae5cdfd
+- new migrator - https://etherscan.io/address/0x93ac37f13bffcfe181f2ab359cc7f67d9ae5cdfd
 
 ## 大厨操作
 - setFeeToSetter - https://etherscan.io/tx/0x2032ce062801e5d9ba03d7717491df6eaba513e5ae536cb97726f58daa66cd92

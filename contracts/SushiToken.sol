@@ -63,7 +63,7 @@ contract SushiToken is ERC20("SushiToken", "SUSHI"), Ownable {
     event DelegateVotesChanged(address indexed delegate, uint previousBalance, uint newBalance);
 
     /**
-     * @notice 获取delegator的委托人
+     * @notice 查询delegator的委托人
      * @notice Delegate votes from `msg.sender` to `delegatee`
      * @param delegator 被委托的地址
      */
@@ -79,7 +79,7 @@ contract SushiToken is ERC20("SushiToken", "SUSHI"), Ownable {
    /**
     * @notice 转移当然用户的委托人
     * @notice Delegate votes from `msg.sender` to `delegatee`
-    * @param delegatee The address to delegate votes to
+    * @param delegatee 委托人地址
     */
     function delegate(address delegatee) external {
         // 将`msg.sender` 的委托人更换为 `delegatee`
@@ -158,9 +158,9 @@ contract SushiToken is ERC20("SushiToken", "SUSHI"), Ownable {
         view
         returns (uint256)
     {
-        // 检查点 = 每个帐户的检查点数映射[账户地址]
+        // 检查点数 = 每个帐户的检查点数映射[账户地址]
         uint32 nCheckpoints = numCheckpoints[account];
-        // 返回 检查点 > 0 ? 选票检查点[账户地址][检查点 - 1].票数 : 0
+        // 返回 检查点 > 0 ? 选票检查点[账户地址][检查点数 - 1(最后一个,索引从0开始,检查点数从1开始)].票数 : 0
         return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
 
@@ -181,7 +181,7 @@ contract SushiToken is ERC20("SushiToken", "SUSHI"), Ownable {
         // 确认 区块号 < 当前区块号
         require(blockNumber < block.number, "SUSHI::getPriorVotes: not yet determined");
 
-        // 检查点 = 每个帐户的检查点数映射[账户地址]
+        // 检查点数 = 每个帐户的检查点数映射[账户地址]
         uint32 nCheckpoints = numCheckpoints[account];
         // 如果检查点 == 0 返回 0
         if (nCheckpoints == 0) {
@@ -190,9 +190,9 @@ contract SushiToken is ERC20("SushiToken", "SUSHI"), Ownable {
 
         // 首先检查最近的余额
         // First check most recent balance
-        // 如果 选票检查点[账户地址][检查点 - 1].from块号 <= 区块号
+        // 如果 选票检查点[账户地址][检查点数 - 1(最后一个,索引从0开始,检查点数从1开始)].from块号 <= 区块号
         if (checkpoints[account][nCheckpoints - 1].fromBlock <= blockNumber) {
-            // 返回 选票检查点[账户地址][检查点 - 1].票数
+            // 返回 选票检查点[账户地址][检查点数 - 1(最后一个,索引从0开始,检查点数从1开始)].票数
             return checkpoints[account][nCheckpoints - 1].votes;
         }
 
@@ -203,29 +203,30 @@ contract SushiToken is ERC20("SushiToken", "SUSHI"), Ownable {
             return 0;
         }
 
-        /*
-        * 搜索排序的“数组”并返回包含以下内容的第一个索引
-        * 大于或等于`element`的值。如果不存在这样的索引（即全部
-        * 数组中的值严格小于`element`），数组长度为
-        * 回来。时间复杂度O（log n）。
-        *
-        * `array`应该按升序排序，并且不包含
-        * 重复的元素
-        */
-        uint32 lower = 0;
-        uint32 upper = nCheckpoints - 1;
-        while (upper > lower) {
-            uint32 center = upper - (upper - lower) / 2; // ceil, avoiding overflow
+        // 通过二分查找找到检查点映射中from区块为给入区块号的检查点构造体中的票数
+        // 如果没有则返回给入区块号之前最临近区块的检查点构造体的检查点数字
+        uint32 lower = 0; //最小值0
+        uint32 upper = nCheckpoints - 1; // 最大值(最后一个,索引从0开始,检查点数从1开始)
+        while (upper > lower) { // 当最大值>最小值
+            // 最大数与最小数之间的中间数 = 最大数 - (最大数 - 最小数) / 2
+            uint32 center = upper - (upper - lower) / 2; // 防止溢出// ceil, avoiding overflow
+            // 实例化检查点映射中用户索引值中间数对应的检查点构造体
             Checkpoint memory cp = checkpoints[account][center];
+            // 如果 中间数构造体中的开始区块号 等于 传入的区块号
             if (cp.fromBlock == blockNumber) {
+                // 返回中间数构造体中的票数
                 return cp.votes;
+            // 否则如果 中间数构造体中的开始区块号 小于 传入的区块号
             } else if (cp.fromBlock < blockNumber) {
+                // 最小值 = 中间值
                 lower = center;
+                // 否则
             } else {
+                // 最大值 = 中间数 - 1
                 upper = center - 1;
             }
         }
-        // 返回票数
+        // 返回检查点映射中用户索引值为检查点数字的检查点构造体的票数
         return checkpoints[account][lower].votes;
     }
 
@@ -255,10 +256,10 @@ contract SushiToken is ERC20("SushiToken", "SUSHI"), Ownable {
     * @dev 转移委托票数
     * @param srcRep 源地址
     * @param dstRep 目标地址
-    * @param amount 数额
+    * @param amount 转移的票数
      */
     function _moveDelegates(address srcRep, address dstRep, uint256 amount) internal {
-        // 如果源地址 != 目标地址 && 数额 > 0
+        // 如果源地址 != 目标地址 && 转移的票数 > 0
         if (srcRep != dstRep && amount > 0) {
             // 如果源地址 != 0地址 源地址不是0地址说明不是铸造方法
             if (srcRep != address(0)) {
@@ -266,9 +267,9 @@ contract SushiToken is ERC20("SushiToken", "SUSHI"), Ownable {
                 // decrease old representative
                 // 源地址的检查点数
                 uint32 srcRepNum = numCheckpoints[srcRep];
-                // 旧的源地址数量 = 源地址的检查点数 > 0 ? 选票检查点[源地址][源地址的检查点数 - 1].票数 : 0
+                // 旧的源地址票数 = 源地址的检查点数 > 0 ? 选票检查点[源地址][源地址的检查点数 - 1(最后一个,索引从0开始,检查点数从1开始)].票数 : 0
                 uint256 srcRepOld = srcRepNum > 0 ? checkpoints[srcRep][srcRepNum - 1].votes : 0;
-                // 新的源地址数量 = 旧的源地址数量 - 数量
+                // 新的源地址票数 = 旧的源地址票数 - 转移的票数
                 uint256 srcRepNew = srcRepOld.sub(amount);
                 // 写入检查点,修改委托人票数
                 _writeCheckpoint(srcRep, srcRepNum, srcRepOld, srcRepNew);
@@ -279,9 +280,9 @@ contract SushiToken is ERC20("SushiToken", "SUSHI"), Ownable {
                 // increase new representative
                 // 目标地址检查点数
                 uint32 dstRepNum = numCheckpoints[dstRep];
-                // 旧目标地址数量 = 目标地址检查点数 > 0 ? 选票检查点[目标地址][目标地址的检查点数 - 1].票数 : 0
+                // 旧目标地址票数 = 目标地址检查点数 > 0 ? 选票检查点[目标地址][目标地址的检查点数 - 1(最后一个,索引从0开始,检查点数从1开始)].票数 : 0
                 uint256 dstRepOld = dstRepNum > 0 ? checkpoints[dstRep][dstRepNum - 1].votes : 0;
-                // 新目标地址数量 = 旧目标地址数量 + 数量
+                // 新目标地址票数 = 旧目标地址票数 + 转移的票数
                 uint256 dstRepNew = dstRepOld.add(amount);
                 // 写入检查点,修改委托人票数
                 _writeCheckpoint(dstRep, dstRepNum, dstRepOld, dstRepNew);
@@ -292,7 +293,7 @@ contract SushiToken is ERC20("SushiToken", "SUSHI"), Ownable {
     /**
     * @dev 写入检查点
     * @param delegatee 委托人地址
-    * @param nCheckpoints 检查点
+    * @param nCheckpoints 检查点数
     * @param oldVotes 旧票数
     * @param newVotes 新票数
      */
@@ -306,14 +307,14 @@ contract SushiToken is ERC20("SushiToken", "SUSHI"), Ownable {
     {
         // 区块号 = 限制在32位2进制之内(当前区块号)
         uint32 blockNumber = safe32(block.number, "SUSHI::_writeCheckpoint: block number exceeds 32 bits");
-        // 如果 检查点 > 0 && 选票检查点[委托人][检查点 - 1].from块号 == 当前区块号
+        // 如果 检查点数 > 0 && 检查点映射[委托人][检查点数 - 1(最后一个,索引从0开始,检查点数从1开始)].from块号 == 当前区块号
         if (nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber) {
-            // 选票检查点[委托人][检查点 - 1].票数 = 新票数
+            // 检查点映射[委托人][检查点数 - 1(最后一个,索引从0开始,检查点数从1开始)].票数 = 新票数
             checkpoints[delegatee][nCheckpoints - 1].votes = newVotes;
         } else {
-            // 选票检查点[委托人][检查点] = 检查点构造体(当前区块号, 新票数)
+            // 检查点映射[委托人][检查点] = 检查点构造体(当前区块号, 新票数)
             checkpoints[delegatee][nCheckpoints] = Checkpoint(blockNumber, newVotes);
-            // 每个帐户的检查点数映射[委托人] = 检查点 + 1
+            // 每个帐户的检查点数映射[委托人] = 检查点数 + 1
             numCheckpoints[delegatee] = nCheckpoints + 1;
         }
         // 触发委托人票数更改事件

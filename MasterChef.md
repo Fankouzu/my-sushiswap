@@ -2,9 +2,9 @@
 
 - 合约地址: https://etherscan.io/address/0xc2edad668740f1aa35e4d8f227fb8e17dca888cd
 
+- 交易hash https://etherscan.io/tx/0x3d68b0d8a94838af33070b8f00558e723f073b23772bd1760f1f4032e21e0fb3
 ## 构造函数
 
-- 交易hash https://etherscan.io/tx/0x3d68b0d8a94838af33070b8f00558e723f073b23772bd1760f1f4032e21e0fb3
 - 构造函数中设置了以下变量:
     - Sushi Token的地址
     - 开发者帐号地址
@@ -57,7 +57,7 @@ struct UserInfo {
 //   3. 用户的“amount”数额被更新
 //   4. 用户的`rewardDebt`已奖励数额得到更新
 ```
-## 写入方法
+## 合约方法
 
 ### 名词示意
 - lpToken: Uniswap中每一个交易对都有一个配对合约,当你将两个Token存入到Uniswap交易所之后,Uniswap交易所会为你找到这个配对合约,并将你的两个Token存入到合约中,然后配对合约其实也是一个ERC20标准的Token合约,所以这个配对合约为了记录你存入的数额,就会为你生成配对合约的ERC20 Token,我们将这个Token称为lpToken,lp的意思是"流动性".在配对合约中lpToken的数额计算方法为:(tokenA数额*tokenB数额)的平方根.因为lpToken是标准的ERC20 token,所以就可以转让给另一个账户.在sushiSwap中存入的就是这个lpToken,当你将lpToken存入到sushiSwap之后,sushiSwap就有权利使用你的lpToken将Uniswap交易所的配对合约中的你存入的两个Token全部取出.
