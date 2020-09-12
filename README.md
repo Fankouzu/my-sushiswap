@@ -6,13 +6,37 @@ https://app.sushiswap.org. Feel free to read the code. More details coming soon.
 
 ## 中文文档
 
-- [主厨合约文档](./MasterChef.md)
+- [MasterChef主厨合约文档](./MasterChef.md)
 - [SushiToken文档](./SushiToken.md)
-- [迁移合约文档](./Migrator.md)
-- [SushiMaker合约](./SushiMaker.md)
-- [SushiBar合约](./SushiBar.md)
+- [Migrator迁移合约文档](./Migrator.md)
+- [SushiMaker文档](./SushiMaker.md)
+- [SushiBar文档](./SushiBar.md)
+- [Uniswap合约修改文档](./UniswapModify.md)
 
-## Deployed Contracts / Hash
+## 合约文件中文注释
+
+- [MasterChef主厨合约](./Contracts/MasterChef.sol)
+- [SushiToken合约](./Contracts/SushiToken.sol)
+- [Migrator迁移合约](./Contracts/Migrator.sol)
+- [SushiMaker合约](./Contracts/SushiMaker.sol)
+- [SushiBar合约](./Contracts/SushiBar.sol)
+- [Uniswap工厂合约](./ontracts/uniswapv2/UniswapV2Factory.sol)
+- [Uniswap配对合约](./ontracts/uniswapv2/UniswapV2Pair.sol)
+
+## SushiSwap合约布署顺序
+
+1. 布署SushiToken,没有构造函数,SushiToken初始代币总量为0
+2. 布署主厨合约,构造函数中需要SushiToken的地址和开发者账号地址,还需要定义开始区块等参数
+3. 可以开始运行质押挖矿了,直到挖矿期结束,开始迁移工作
+4. 布署Uniswap工厂合约,构造函数为收税地址管理员账号,这个账号可以设置税款接收地址,目前为SBF掌握
+5. 布署Uniswap路由合约,构造函数为工厂合约地址和WETH地址
+6. 布署迁移合约,构造函数中包括主厨合约地址,Uniswap工厂合约地址,SushiSwap工厂合约地址和执行迁移不能早于的区块号
+7. 现在可以执行迁移操作了
+8. 布署SushiBar合约,构造函数中为SushiToken的合约地址
+9. 布署SushiMaker合约,构造函数中为SushiSwap工厂合约地址,SushiBar合约地址,SushiToken的合约地址,WETH合约地址,只有要把SushiSwap工厂合约的feeTo地址设置为SushiMaker的地址
+10. 现在SushiSwap已经可以正常运行了,0.05%的手续费税款会转到SushiMaker的地址,通过调用SushiMaker的合约方法可以将手续费税款对应的资产一步操作全部购买成SushiToken,然后会将SushiToken转到SushiBar合约
+
+## SushiSwap合约地址/Hash
 
 - 主厨Nomi的地址 - https://etherscan.io/address/0xf942dba4159cb61f8ad88ca4a83f5204e8f4a6bd
 - SushiToken - https://etherscan.io/token/0x6b3595068778dd592e39a122f4f5a5cf09c90fe2
