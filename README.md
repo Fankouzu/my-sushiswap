@@ -15,13 +15,13 @@ https://app.sushiswap.org. Feel free to read the code. More details coming soon.
 
 ## 合约文件中文注释
 
-- [MasterChef主厨合约](./Contracts/MasterChef.sol)
-- [SushiToken合约](./Contracts/SushiToken.sol)
-- [Migrator迁移合约](./Contracts/Migrator.sol)
-- [SushiMaker合约](./Contracts/SushiMaker.sol)
-- [SushiBar合约](./Contracts/SushiBar.sol)
-- [Uniswap工厂合约](./ontracts/uniswapv2/UniswapV2Factory.sol)
-- [Uniswap配对合约](./ontracts/uniswapv2/UniswapV2Pair.sol)
+- [MasterChef主厨合约](./contracts/MasterChef.sol)
+- [SushiToken合约](./contracts/SushiToken.sol)
+- [Migrator迁移合约](./contracts/Migrator.sol)
+- [SushiMaker合约](./contracts/SushiMaker.sol)
+- [SushiBar合约](./contracts/SushiBar.sol)
+- [Uniswap工厂合约](./contracts/uniswapv2/UniswapV2Factory.sol)
+- [Uniswap配对合约](./contracts/uniswapv2/UniswapV2Pair.sol)
 
 ## SushiSwap合约布署顺序
 
