@@ -6,6 +6,7 @@ import './UniswapV2Pair.sol';
 contract UniswapV2Factory is IUniswapV2Factory {
     address public override feeTo;
     address public override feeToSetter;
+    // 迁移合约地址
     address public override migrator;
 
     mapping(address => mapping(address => address)) public override getPair;
@@ -20,6 +21,7 @@ contract UniswapV2Factory is IUniswapV2Factory {
     function allPairsLength() external override view returns (uint) {
         return allPairs.length;
     }
+    // 配对合约源代码Bytecode的hash值(用作前端计算配对合约地址)
     function pairCodeHash() external pure returns (bytes32) {
         return keccak256(type(UniswapV2Pair).creationCode);
     }
@@ -45,6 +47,7 @@ contract UniswapV2Factory is IUniswapV2Factory {
         require(msg.sender == feeToSetter, 'UniswapV2: FORBIDDEN');
         feeTo = _feeTo;
     }
+    // 设置迁移合约地址的方法,只能由feeToSetter设置
     function setMigrator(address _migrator) external override {
         require(msg.sender == feeToSetter, 'UniswapV2: FORBIDDEN');
         migrator = _migrator;

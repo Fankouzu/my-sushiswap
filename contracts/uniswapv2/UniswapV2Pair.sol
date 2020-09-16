@@ -122,12 +122,17 @@ contract UniswapV2Pair is UniswapV2ERC20 {
         bool feeOn = _mintFee(_reserve0, _reserve1);
         uint _totalSupply = totalSupply; // gas savings, must be defined here since totalSupply can update in _mintFee
         if (_totalSupply == 0) {
+            // 定义迁移合约,从工厂合约中调用迁移合约的地址
             address migrator = IUniswapV2Factory(factory).migrator();
+            // 如果调用者是迁移合约(说明是正在执行迁移操作)
             if (msg.sender == migrator) {
+                // 流动性 = 迁移合约中的`需求流动性数额`,这个数额在交易开始之前是无限大,交易过程中调整为lpToken迁移到数额,交易结束之后又会被调整回无限大
                 liquidity = IMigrator(migrator).desiredLiquidity();
+                // 确认流动性数额大于0并且不等于无限大
                 require(liquidity > 0 && liquidity != uint256(-1), "Bad desired liquidity");
                 // 否则
             } else {
+                // 确认迁移地址等于0地址(说明不在迁移过程中,属于交易所营业后的创建流动性操作)
                 require(migrator == address(0), "Must not have migrator");
                 liquidity = Math.sqrt(amount0.mul(amount1)).sub(MINIMUM_LIQUIDITY);
                 _mint(address(0), MINIMUM_LIQUIDITY); // permanently lock the first MINIMUM_LIQUIDITY tokens
