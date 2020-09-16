@@ -10,6 +10,10 @@ module.exports = function(deployer,network,accounts) {
       '100000000000000000000', //每块创建的SUSHI令牌
       '10750000', //SUSHI挖掘开始时的块号
       '10850000' //奖励结束块号
-      );
+      ).then(async (MasterChefInstance)=>{
+        //将SushiToken的Owner权限交给主厨合约
+        await SushiTokenInstance.transferOwnership(MasterChefInstance.address);
+        console.log(await SushiTokenInstance.owner());
+      });
   });
 };

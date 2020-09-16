@@ -25,16 +25,40 @@ https://app.sushiswap.org. Feel free to read the code. More details coming soon.
 
 ## SushiSwap合约布署顺序
 
+### 首先运行命令
+- 在项目目录运行命令安装依赖后才可以运行布署脚本
+
+```
+$ npm install
+```
+
+### 布署说明
+> 通过修改对应布署脚本中的参数实现定制自己的SushiSwap
 1. 布署SushiToken,没有构造函数,SushiToken初始代币总量为0
 2. 布署主厨合约,构造函数中需要SushiToken的地址和开发者账号地址,还需要定义开始区块等参数
+- [布署脚本2](./migrations/2_deploy_SushiCore.js)
 3. 可以开始运行质押挖矿了,直到挖矿期结束,开始迁移工作
 4. 布署Uniswap工厂合约,构造函数为收税地址管理员账号,这个账号可以设置税款接收地址,目前为SBF掌握
 5. 布署Uniswap路由合约,构造函数为工厂合约地址和WETH地址
+- [布署脚本3](./migrations/3_deploy_Uniswap.js)
 6. 布署迁移合约,构造函数中包括主厨合约地址,Uniswap工厂合约地址,SushiSwap工厂合约地址和执行迁移不能早于的区块号
+- [布署脚本4](./migrations/4_deploy_Migrator.js)
 7. 现在可以执行迁移操作了
 8. 布署SushiBar合约,构造函数中为SushiToken的合约地址
+- [布署脚本5](./migrations/5_deploy_SushiBar.js)
 9. 布署SushiMaker合约,构造函数中为SushiSwap工厂合约地址,SushiBar合约地址,SushiToken的合约地址,WETH合约地址,只有要把SushiSwap工厂合约的feeTo地址设置为SushiMaker的地址
+- [布署脚本6](./migrations/6_deploy_SushiMaker.js)
 10. 现在SushiSwap已经可以正常运行了,0.05%的手续费税款会转到SushiMaker的地址,通过调用SushiMaker的合约方法可以将手续费税款对应的资产一步操作全部购买成SushiToken,然后会将SushiToken转到SushiBar合约
+### 布署命令
+1. 修改项目目录中的truffle-config.js文件,设置infuraKey和mnemonic助记词
+2. 在项目目录运行以下命令可以布署,修改脚本编号,网络名称可以修改为"mainnet"就是以太坊主网,"ropsten,rinkeby,goerli,kovan"为4个测试网,"ganache"为本地测试环境
+```
+$ truffle migrate -f <脚本编号> -t <相同的脚本编号> --network <网络名称>
+```
+3. 本地测试环境可以通过以下命令打开
+```
+$ npm run ganache
+```
 
 ## SushiSwap合约地址/Hash
 
