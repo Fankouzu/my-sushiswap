@@ -96,6 +96,8 @@ $ npm run ganache
 > 执行sushi工厂合约中的setMigrator方法,在工厂合约中设置迁移合约地址,此方法为将来运行交易所做准备,并不能执行迁移操作
 - queueTransaction - https://etherscan.io/tx/0x416a19f54d85de00b5cfcb7f498e61e5867b2a88e981c8396ea3e27ab7388cac
 > 重新提交setMigrator交易,将迁移合约地址设置为0x93ac37f13bffcfe181f2ab359cc7f67d9ae5cdfd
+- 500个ETH巨额交易费的交易
+> https://cn.etherscan.com/tx/0x7ef94acf19eaff3517e0675db1d6694b7567e79090cb1192f20ad0ee7892078d
 
 ## License
 

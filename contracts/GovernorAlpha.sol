@@ -23,7 +23,7 @@ pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "./SushiToken.sol";
-
+// 治理合约,目前尚未部署
 contract GovernorAlpha {
     /// @notice 合约名称
     /// @notice The name of this contract
@@ -109,7 +109,7 @@ contract GovernorAlpha {
         // @notice  要进行调用的目标地址的有序列表
         // @notice  the ordered list of target addresses for calls to be made
         address[] targets;
-        // @notice  要传递给要进行的调用的值（即msg.value）的有序列表
+        // @notice  要传递给要进行的调用的主币数量（即msg.value）的有序列表
         // @notice  The ordered list of values (i.e. msg.value) to be passed to the calls to be made
         uint256[] values;
         // @notice  要调用的功能签名的有序列表
@@ -239,6 +239,15 @@ contract GovernorAlpha {
         guardian = guardian_;
     }
 
+    /**
+     * @dev 提案方法
+     * @param targets 目标地址数组
+     * @param values 主币数量数组
+     * @param signatures 签名字符串数组
+     * @param calldatas 调用数据数组
+     * @param description 说明
+     * @notice 将提案写入构提案造体,并推入提案数组,发起人的提案id++
+     */
     function propose(
         address[] memory targets,
         uint256[] memory values,
@@ -267,6 +276,7 @@ contract GovernorAlpha {
         );
 
         uint256 latestProposalId = latestProposalIds[msg.sender];
+        // 如果发起人之前有过提案,则之前的提案必须已经关闭
         if (latestProposalId != 0) {
             ProposalState proposersLatestProposalState = state(
                 latestProposalId
@@ -318,6 +328,11 @@ contract GovernorAlpha {
         return newProposal.id;
     }
 
+    /**
+     * @dev 队列方法
+     * @param proposalId 提案ID
+     * @notice 将已经成功的提案推入时间锁合约的执行队列中
+     */
     function queue(uint256 proposalId) public {
         require(
             state(proposalId) == ProposalState.Succeeded,
@@ -338,6 +353,15 @@ contract GovernorAlpha {
         emit ProposalQueued(proposalId, eta);
     }
 
+    /**
+     * @dev 插入时间锁队列
+     * @param target 目标地址
+     * @param value 主币数量
+     * @param signature 签名
+     * @param data 数据
+     * @param eta 时间
+     * @notice 将已经成功的提案推入时间锁合约的执行队列中
+     */
     function _queueOrRevert(
         address target,
         uint256 value,
@@ -354,6 +378,11 @@ contract GovernorAlpha {
         timelock.queueTransaction(target, value, signature, data, eta);
     }
 
+    /**
+     * @dev 执行操作
+     * @param proposalId 提案ID
+     * @notice 将队列中的提案推入到时间锁合约的执行方法中
+     */
     function execute(uint256 proposalId) public payable {
         require(
             state(proposalId) == ProposalState.Queued,
@@ -373,6 +402,11 @@ contract GovernorAlpha {
         emit ProposalExecuted(proposalId);
     }
 
+    /**
+     * @dev 取消提案
+     * @param proposalId 提案ID
+     * @notice 将提案推入到时间锁合约的取消方法中
+     */
     function cancel(uint256 proposalId) public {
         ProposalState state = state(proposalId);
         require(
@@ -405,6 +439,11 @@ contract GovernorAlpha {
         emit ProposalCanceled(proposalId);
     }
 
+    /**
+     * @dev 获取动作
+     * @param proposalId 提案ID
+     * @notice 获取提案中的动作
+     */
     function getActions(uint256 proposalId)
         public
         view
@@ -419,6 +458,12 @@ contract GovernorAlpha {
         return (p.targets, p.values, p.signatures, p.calldatas);
     }
 
+    /**
+     * @dev 获取收据
+     * @param proposalId 提案ID
+     * @param voter 投票人地址
+     * @notice 获取提案中指定投票人的收据
+     */
     function getReceipt(uint256 proposalId, address voter)
         public
         view
@@ -427,6 +472,11 @@ contract GovernorAlpha {
         return proposals[proposalId].receipts[voter];
     }
 
+    /**
+     * @dev 提案状态
+     * @param proposalId 提案ID
+     * @notice 返回提案当前状态
+     */
     function state(uint256 proposalId) public view returns (ProposalState) {
         require(
             proposalCount >= proposalId && proposalId > 0,
@@ -457,10 +507,24 @@ contract GovernorAlpha {
         }
     }
 
+    /**
+     * @dev 投票方法
+     * @param proposalId 提案ID
+     * @param support 是否支持
+     */
     function castVote(uint256 proposalId, bool support) public {
         return _castVote(msg.sender, proposalId, support);
     }
 
+    /**
+     * @dev 带签名的投票方法
+     * @param proposalId 提案ID
+     * @param support 是否支持
+     * @param v 签名的恢复字节
+     * @param r ECDSA签名对的一半 
+     * @param s ECDSA签名对的一半 
+     * @notice 使用签名还原的帐号投票
+     */
     function castVoteBySig(
         uint256 proposalId,
         bool support,
@@ -490,6 +554,13 @@ contract GovernorAlpha {
         return _castVote(signatory, proposalId, support);
     }
 
+    /**
+     * @dev 投票方法
+     * @param voter 投票人
+     * @param proposalId 提案ID
+     * @param support 是否支持
+     * @notice 调用sushiToken中投票人的票数进行投票,将票数记录在收据构造体中
+     */
     function _castVote(
         address voter,
         uint256 proposalId,
@@ -520,6 +591,10 @@ contract GovernorAlpha {
         emit VoteCast(voter, proposalId, support, votes);
     }
 
+    /**
+     * @dev 接受管理员
+     * @notice 接受并成为时间锁合约的管理员
+     */
     function __acceptAdmin() public {
         require(
             msg.sender == guardian,
@@ -528,6 +603,10 @@ contract GovernorAlpha {
         timelock.acceptAdmin();
     }
 
+    /**
+     * @dev 放弃方法
+     * @notice 当治理合约成为时间锁合约管理员之后,放弃管理员的权限
+     */
     function __abdicate() public {
         require(
             msg.sender == guardian,
@@ -536,6 +615,12 @@ contract GovernorAlpha {
         guardian = address(0);
     }
 
+    /**
+     * @dev 更换时间锁管理员
+     * @param newPendingAdmin 新管理员
+     * @param eta 执行时间
+     * @notice 将设置时间锁管理员的操作推入时间锁合约的队列中
+     */
     function __queueSetTimelockPendingAdmin(
         address newPendingAdmin,
         uint256 eta
@@ -553,6 +638,12 @@ contract GovernorAlpha {
         );
     }
 
+    /**
+     * @dev 执行更换时间锁管理员
+     * @param newPendingAdmin 新管理员
+     * @param eta 执行时间
+     * @notice 执行设置时间锁管理员的操作
+     */
     function __executeSetTimelockPendingAdmin(
         address newPendingAdmin,
         uint256 eta

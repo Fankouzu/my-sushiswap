@@ -53,18 +53,30 @@ contract Timelock {
         bytes data,
         uint256 eta
     );
-
+    // 过期时间 14天
     uint256 public constant GRACE_PERIOD = 14 days;
+    // 最小延迟 2天
     uint256 public constant MINIMUM_DELAY = 2 days;
+    // 最大延迟 30天
     uint256 public constant MAXIMUM_DELAY = 30 days;
 
+    // 管理员地址
     address public admin;
+    // 处理中的管理员
     address public pendingAdmin;
+    // 延迟时间
     uint256 public delay;
+    // 是否初始化管理员
     bool public admin_initialized;
 
+    // 交易队列
     mapping(bytes32 => bool) public queuedTransactions;
 
+    /**
+     * @dev 构造函数
+     * @param admin_ 管理员地址
+     * @param delay_ 延迟时间
+     */
     constructor(address admin_, uint256 delay_) public {
         require(
             delay_ >= MINIMUM_DELAY,
@@ -83,6 +95,11 @@ contract Timelock {
     // XXX: function() external payable { }
     receive() external payable {}
 
+    /**
+     * @dev 设置默认延迟时间方法
+     * @param delay_ 延迟时间
+     * @notice 这个方法只能由当前合约自身调用,也就是将设置延迟时间的方法推入执行队列后再执行
+     */
     function setDelay(uint256 delay_) public {
         require(
             msg.sender == address(this),
@@ -101,6 +118,9 @@ contract Timelock {
         emit NewDelay(delay);
     }
 
+    /**
+     * @dev 接受管理员方法
+     */
     function acceptAdmin() public {
         require(
             msg.sender == pendingAdmin,
@@ -112,6 +132,11 @@ contract Timelock {
         emit NewAdmin(admin);
     }
 
+    /**
+     * @dev 设置处理中的管理员方法
+     * @param pendingAdmin_ 待处理的管理员
+     * @notice 第一次执行只能通过初始化管理员设置,只有执行只能通过当前合约自身执行
+     */
     function setPendingAdmin(address pendingAdmin_) public {
         // allows one time setting of admin for deployment purposes
         if (admin_initialized) {
@@ -131,6 +156,15 @@ contract Timelock {
         emit NewPendingAdmin(pendingAdmin);
     }
 
+    /**
+     * @dev 交易队列
+     * @param targets 目标地址数组
+     * @param values 值数组
+     * @param signatures 签名字符串数组
+     * @param data 调用数据数组
+     * @param eta 延迟时间
+     * @notice 只能通过管理员执行(治理合约)
+     */
     function queueTransaction(
         address target,
         uint256 value,
@@ -156,6 +190,15 @@ contract Timelock {
         return txHash;
     }
 
+    /**
+     * @dev 取消交易
+     * @param targets 目标地址数组
+     * @param values 值数组
+     * @param signatures 签名字符串数组
+     * @param data 调用数据数组
+     * @param eta 延迟时间
+     * @notice 只能通过管理员执行(治理合约)
+     */
     function cancelTransaction(
         address target,
         uint256 value,
@@ -176,6 +219,15 @@ contract Timelock {
         emit CancelTransaction(txHash, target, value, signature, data, eta);
     }
 
+    /**
+     * @dev 执行交易
+     * @param targets 目标地址数组
+     * @param values 值数组
+     * @param signatures 签名字符串数组
+     * @param data 调用数据数组
+     * @param eta 延迟时间
+     * @notice 只能通过管理员执行(治理合约)
+     */
     function executeTransaction(
         address target,
         uint256 value,
