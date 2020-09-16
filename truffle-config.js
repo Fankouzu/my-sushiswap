@@ -1,9 +1,9 @@
 const fs = require('fs');
+require('dotenv').config();
 
 const HDWalletProvider = require('@truffle/hdwallet-provider');
-const infuraKey = "infuraKey...到 https://infura.io 申请";
-const mnemonic = "钱包助记词...";
-
+const infuraKey = process.env.infuraKey;
+const mnemonic = process.env.mnemonic;
 module.exports = {
 
   networks: {
@@ -90,5 +90,11 @@ module.exports = {
         //   evmVersion: "istanbul"
       }
     }
+  },
+  plugins: [
+    'truffle-plugin-verify'
+  ],
+  api_keys: {
+    etherscan: process.env.ETHERSCAN_API_KEY
   }
 };

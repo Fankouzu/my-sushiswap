@@ -50,7 +50,7 @@ $ npm install
 - [布署脚本6](./migrations/6_deploy_SushiMaker.js)
 10. 现在SushiSwap已经可以正常运行了,0.05%的手续费税款会转到SushiMaker的地址,通过调用SushiMaker的合约方法可以将手续费税款对应的资产一步操作全部购买成SushiToken,然后会将SushiToken转到SushiBar合约
 ### 布署命令
-1. 修改项目目录中的truffle-config.js文件,设置infuraKey和mnemonic助记词
+1. 将项目目录中的.env.sample文件修改文件名为.env,编辑这个文件设置infuraKey和mnemonic助记词
 2. 在项目目录运行以下命令可以布署,修改脚本编号,网络名称可以修改为"mainnet"就是以太坊主网,"ropsten,rinkeby,goerli,kovan"为4个测试网,"ganache"为本地测试环境
 ```
 $ truffle migrate -f <脚本编号> -t <相同的脚本编号> --network <网络名称>

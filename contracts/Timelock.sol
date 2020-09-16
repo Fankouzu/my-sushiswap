@@ -158,9 +158,9 @@ contract Timelock {
 
     /**
      * @dev 交易队列
-     * @param targets 目标地址数组
-     * @param values 值数组
-     * @param signatures 签名字符串数组
+     * @param target 目标地址数组
+     * @param value 值数组
+     * @param signature 签名字符串数组
      * @param data 调用数据数组
      * @param eta 延迟时间
      * @notice 只能通过管理员执行(治理合约)
@@ -192,9 +192,9 @@ contract Timelock {
 
     /**
      * @dev 取消交易
-     * @param targets 目标地址数组
-     * @param values 值数组
-     * @param signatures 签名字符串数组
+     * @param target 目标地址数组
+     * @param value 值数组
+     * @param signature 签名字符串数组
      * @param data 调用数据数组
      * @param eta 延迟时间
      * @notice 只能通过管理员执行(治理合约)
@@ -221,9 +221,9 @@ contract Timelock {
 
     /**
      * @dev 执行交易
-     * @param targets 目标地址数组
-     * @param values 值数组
-     * @param signatures 签名字符串数组
+     * @param target 目标地址数组
+     * @param value 值数组
+     * @param signature 签名字符串数组
      * @param data 调用数据数组
      * @param eta 延迟时间
      * @notice 只能通过管理员执行(治理合约)
