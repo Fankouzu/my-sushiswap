@@ -60,6 +60,22 @@ $ truffle migrate -f <脚本编号> -t <相同的脚本编号> --network <网络
 $ npm run ganache
 ```
 
+### SushiSwap 前端修改
+- 修改文件sushiswap-frontend/src/sushi/lib/constants.js
+```
+// 替换成自己的SushiToken地址和主厨合约地址即可
+export const contractAddresses = {
+  sushi: {
+    1: '0x6b3595068778dd592e39a122f4f5a5cf09c90fe2',
+  },
+  masterChef: {
+    1: '0xc2edad668740f1aa35e4d8f227fb8e17dca888cd',
+  },
+  weth: {
+    1: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+  },
+}
+```
 ## SushiSwap合约地址/Hash
 
 - 主厨Nomi的地址 - https://etherscan.io/address/0xf942dba4159cb61f8ad88ca4a83f5204e8f4a6bd
