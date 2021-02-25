@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -108,7 +110,7 @@ contract MasterChef is Ownable {
     // Info of each user that stakes LP tokens.
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
     // 总分配点。必须是所有池中所有分配点的总和
-    // Total allocation poitns. Must be the sum of all allocation points in all pools.
+    // Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
     // SUSHI挖掘开始时的块号
     // The block number when SUSHI mining starts.
@@ -396,17 +398,21 @@ contract MasterChef is Ownable {
                 .mul(pool.accSushiPerShare)
                 .div(1e12)
                 .sub(user.rewardDebt);
-            // 向当前用户安全发送待定数额的sushi
-            safeSushiTransfer(msg.sender, pending);
+            if (pending > 0) {
+                // 向当前用户安全发送待定数额的sushi
+                safeSushiTransfer(msg.sender, pending);
+            }
         }
-        // 调用池子.lptoken的安全发送方法,将_amount数额的lp token从当前用户发送到当前合约
-        pool.lpToken.safeTransferFrom(
-            address(msg.sender),
-            address(this),
-            _amount
-        );
-        // 用户.已添加的数额  = 用户.已添加的数额 + _amount数额
-        user.amount = user.amount.add(_amount);
+        if (_amount > 0) {
+            // 调用池子.lptoken的安全发送方法,将_amount数额的lp token从当前用户发送到当前合约
+            pool.lpToken.safeTransferFrom(
+                address(msg.sender),
+                address(this),
+                _amount
+            );
+            // 用户.已添加的数额  = 用户.已添加的数额 + _amount数额
+            user.amount = user.amount.add(_amount);
+        }
         // 用户.已奖励数额 = 用户.已添加的数额 * 池子.每股累积SUSHI / 1e12
         user.rewardDebt = user.amount.mul(pool.accSushiPerShare).div(1e12);
         // 触发存款事件
@@ -432,14 +438,18 @@ contract MasterChef is Ownable {
         uint256 pending = user.amount.mul(pool.accSushiPerShare).div(1e12).sub(
             user.rewardDebt
         );
-        // 向当前用户安全发送待定数额的sushi
-        safeSushiTransfer(msg.sender, pending);
-        // 用户.已添加的数额  = 用户.已添加的数额 - _amount数额
-        user.amount = user.amount.sub(_amount);
+        if (pending > 0) {
+            // 向当前用户安全发送待定数额的sushi
+            safeSushiTransfer(msg.sender, pending);
+        }
+        if (_amount > 0) {
+            // 用户.已添加的数额  = 用户.已添加的数额 - _amount数额
+            user.amount = user.amount.sub(_amount);
+            // 调用池子.lptoken的安全发送方法,将_amount数额的lp token从当前合约发送到当前用户
+            pool.lpToken.safeTransfer(address(msg.sender), _amount);
+        }
         // 用户.已奖励数额 = 用户.已添加的数额 * 池子.每股累积SUSHI / 1e12
         user.rewardDebt = user.amount.mul(pool.accSushiPerShare).div(1e12);
-        // 调用池子.lptoken的安全发送方法,将_amount数额的lp token从当前合约发送到当前用户
-        pool.lpToken.safeTransfer(address(msg.sender), _amount);
         // 触发提款事件
         emit Withdraw(msg.sender, _pid, _amount);
     }
@@ -454,14 +464,15 @@ contract MasterChef is Ownable {
         PoolInfo storage pool = poolInfo[_pid];
         // 根据池子id和当前用户地址,实例化用户信息
         UserInfo storage user = userInfo[_pid][msg.sender];
-        // 调用池子.lptoken的安全发送方法,将_amount数额的lp token从当前合约发送到当前用户
-        pool.lpToken.safeTransfer(address(msg.sender), user.amount);
-        // 触发紧急提款事件
-        emit EmergencyWithdraw(msg.sender, _pid, user.amount);
+        uint256 amount = user.amount;
         // 用户.已添加数额 = 0
         user.amount = 0;
         // 用户.已奖励数额 = 0
         user.rewardDebt = 0;
+        // 调用池子.lptoken的安全发送方法,将_amount数额的lp token从当前合约发送到当前用户
+        pool.lpToken.safeTransfer(address(msg.sender), amount);
+        // 触发紧急提款事件
+        emit EmergencyWithdraw(msg.sender, _pid, amount);
     }
 
     /**
